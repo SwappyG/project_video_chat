@@ -1,6 +1,7 @@
-import React, { useContext } from 'react';
-import { Grid, Typography, Paper, makeStyles } from '@material-ui/core';
+/* eslint-disable */
 
+import React, { useContext, useEffect, createRef } from 'react';
+import { Grid, Typography, Paper, makeStyles } from '@material-ui/core';
 import { SocketContext } from '../Context';
 
 const useStyles = makeStyles((theme) => ({
@@ -23,27 +24,43 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
+// This makes sure that we create a new Ref and wait for it to exist before
+// assigning the stream. Allows us to dynamically add streams
+const VideoContainer = ({ stream }) => {
+  const localVideo = createRef();
+  const classes = useStyles()
+
+  useEffect(() => {
+    if (localVideo.current) {
+      localVideo.current.srcObject = stream;
+    }
+  }, [stream, localVideo]);
+
+  return (
+    <video playsInline ref={localVideo} autoPlay className={classes.video} />
+  );
+}
+
 const VideoPlayer = () => {
   const { name, callAccepted, myVideo, userVideo, callEnded, stream, call } = useContext(SocketContext);
   const classes = useStyles();
 
+  console.log(userVideo)
+  console.log(callAccepted, callEnded)
+
   return (
     <Grid container className={classes.gridContainer}>
-      {stream && (
-        <Paper className={classes.paper}>
-          <Grid item xs={12} md={6}>
-            <Typography variant="h5" gutterBottom>{name || 'Name'}</Typography>
-            <video playsInline muted ref={myVideo} autoPlay className={classes.video} />
-          </Grid>
-        </Paper>
-      )}
       {callAccepted && !callEnded && (
-        <Paper className={classes.paper}>
-          <Grid item xs={12} md={6}>
-            <Typography variant="h5" gutterBottom>{call.name || 'Name'}</Typography>
-            <video playsInline ref={userVideo} autoPlay className={classes.video} />
-          </Grid>
-        </Paper>
+        userVideo.map((v) => {
+          return (
+            <Paper key={v.id} className={classes.paper}>
+              <Grid item xs={12} md={6}>
+                <Typography variant="h5" gutterBottom>{call.name || 'Name'}</Typography>
+                <VideoContainer stream={v} />
+              </Grid>
+            </Paper>
+          )
+        })
       )}
     </Grid>
   );

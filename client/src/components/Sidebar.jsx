@@ -6,6 +6,8 @@ import { makeStyles } from '@material-ui/core/styles';
 
 import { SocketContext } from '../Context';
 
+/* eslint-disable */
+
 const useStyles = makeStyles((theme) => ({
   root: {
     display: 'flex',
