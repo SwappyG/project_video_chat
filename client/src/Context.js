@@ -6,8 +6,8 @@ import Peer from 'simple-peer';
 
 const SocketContext = createContext();
 
-// const socket = io('http://localhost:5000');
-const socket = io('https://warm-wildwood-81069.herokuapp.com');
+const socket = io('http://localhost:5000');
+// const socket = io('https://warm-wildwood-81069.herokuapp.com');
 
 // Monkey patches the Peer objects to log every event they emit
 // For debugging purposes, remove eventually
@@ -39,7 +39,11 @@ const ContextProvider = ({ children }) => {
     navigator.mediaDevices.getUserMedia({ video: true, audio: true })
       .then((curr_stream) => setStream(curr_stream));
 
-    socket.on('me', (id) => setMe(id));
+    socket.on('me', (id) => {
+      setMe(id)
+      console.log(`ID: ${id}`)
+    })
+
     socket.on('callUser', ({ from, name: callerName, signal }) => {
       setCall({ isReceivingCall: true, from, name: callerName, signal });
     });
