@@ -4,6 +4,8 @@ import React, { createContext, useState, useRef, useEffect, createRef } from 're
 import { io } from 'socket.io-client';
 import Peer from 'simple-peer';
 
+var http = require('http');
+
 const SocketContext = createContext();
 
 const socket = io('http://localhost:5000');
@@ -47,6 +49,10 @@ const ContextProvider = ({ children }) => {
     socket.on('callUser', ({ from, name: callerName, signal }) => {
       setCall({ isReceivingCall: true, from, name: callerName, signal });
     });
+
+    socket.on('cc_provider', ({message}) => {
+      console.log(`got cc message: ${message}`)
+    })
   }, []);
 
   // Required because myVideo.current may still be null when stream is first set
@@ -55,6 +61,10 @@ const ContextProvider = ({ children }) => {
       myVideo.current.srcObject = stream
     }
   }, [myVideo, stream])
+
+  useEffect(() => {
+
+  })
 
   // Right now, multiple calls can happen concurrently, but only 1 new call
   // can be initiated at a time
