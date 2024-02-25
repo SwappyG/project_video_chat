@@ -4,6 +4,8 @@ import React, { createContext, useState, useRef, useEffect, createRef } from 're
 import { io } from 'socket.io-client';
 import Peer from 'simple-peer';
 
+const CAPTION_DWELL_TIME = 3000 // ms
+
 var http = require('http');
 
 const SocketContext = createContext();
@@ -30,6 +32,9 @@ const ContextProvider = ({ children }) => {
   const [name, setName] = useState('');
   const [call, setCall] = useState({isReceiveingCall: false});
   const [me, setMe] = useState('');
+  const [captions, setCaptions] = useState([])
+  // const [init, setInit] = useState(false)
+  // const [captionTime, setCaptionTime] = useState('')
 
   const myVideo = useRef(null);
   const [userVideo, setUserVideo] = useState([]);
@@ -44,16 +49,46 @@ const ContextProvider = ({ children }) => {
     socket.on('me', (id) => {
       setMe(id)
       console.log(`ID: ${id}`)
+      setCaptions([...captions, {id: id, caption: null, caption_time: Date.now()}])
+      // console.log([...captions, {id: id, caption: null, caption_time: Date.now()}])
     })
 
     socket.on('callUser', ({ from, name: callerName, signal }) => {
       setCall({ isReceivingCall: true, from, name: callerName, signal });
     });
 
-    socket.on('cc_provider', ({message}) => {
-      console.log(`got cc message: ${message}`)
+    socket.on('cc_provider', ({id, message}) => {
+      console.log(id, message)
+      console.log(captions)
+      let caption = captions.find(cap => cap.id === id)
+      if (caption != null) {
+        caption.caption = message
+        caption.caption_time = Date.now()
+      } else {
+        console.log(`nowhere to send caption for [${id}]`)
+      }
+      console.log(`got cc message: ${id}: ${message}`)
     })
+
+    
+
+    // setInterval(() => {
+    //   // const curr_time = Date.now()
+    //   // setCaptions(captions.map(cap => {
+    //   //   if ((cap.caption !== null) && (cap.caption_time - curr_time) > CAPTION_DWELL_TIME) {
+    //   //     cap.caption = null
+    //   //   }
+    //   // }))
+    //   console.log(captions)
+    // }, 1000)
+    // setInit(true)
   }, []);
+
+  // useEffect(() => {
+  //   if (!init) {
+      
+  //   }
+  // }, [init])
 
   // Required because myVideo.current may still be null when stream is first set
   useEffect(() => {
@@ -62,13 +97,10 @@ const ContextProvider = ({ children }) => {
     }
   }, [myVideo, stream])
 
-  useEffect(() => {
-
-  })
-
   // Right now, multiple calls can happen concurrently, but only 1 new call
   // can be initiated at a time
   const answerCall = () => {
+    // setCaptions([...captions, {id: call.from, caption: null, caption_time: Date.now()}])
     setCallAccepted(true)
     setCall({ isReceivedCall: false})
     const peer = new Peer({ initiator: false, trickle: false, stream });
@@ -77,7 +109,11 @@ const ContextProvider = ({ children }) => {
     peer.on('signal', (session_description) => {
       socket.emit('answerCall', { signal: session_description, to: call.from });
     });
-    peer.on('stream', (currentStream) => setUserVideo([...userVideo, currentStream]));
+
+    peer.on('stream', (currentStream) => {
+      setUserVideo([...userVideo, currentStream])
+    });
+    
     peer.signal(call.signal);
 
     connectionRef.current.push(peer);
@@ -86,6 +122,7 @@ const ContextProvider = ({ children }) => {
   const callUser = (id) => {
     const peer = new Peer({ initiator: true, trickle: false, stream });
     patchEmitter(peer)
+    // setCaptions([...captions, {id, caption: null, caption_time: Date.now()}])
 
     peer.on('signal', (data) => {
       socket.emit('callUser', { userToCall: id, signalData: data, from: me, name });
@@ -94,7 +131,7 @@ const ContextProvider = ({ children }) => {
     peer.on('stream', (currentStream) => {
       setUserVideo([...userVideo, currentStream])
     });
-
+    
     socket.on('callAccepted', (signal) => {
       setCallAccepted(true)
       setCall({ isReceivedCall: false})
@@ -126,6 +163,7 @@ const ContextProvider = ({ children }) => {
       callUser,
       leaveCall,
       answerCall,
+      captions,
     }}
     >
       {children}
@@ -134,3 +172,5 @@ const ContextProvider = ({ children }) => {
 };
 
 export { ContextProvider, SocketContext };
+
+

@@ -42,11 +42,12 @@ const VideoContainer = ({ stream }) => {
 }
 
 const VideoPlayer = () => {
-  const { name, callAccepted, myVideo, userVideo, callEnded, stream, call } = useContext(SocketContext);
+  const { name, callAccepted, myVideo, userVideo, callEnded, stream, call, captions } = useContext(SocketContext);
   const classes = useStyles();
 
-  console.log(userVideo)
-  console.log(callAccepted, callEnded)
+  useEffect(() => {
+    console.log(captions)
+  }, [captions])
 
   return (
     <Grid container className={classes.gridContainer}>
