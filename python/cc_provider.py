@@ -11,9 +11,9 @@ if __name__=="__main__":
         print(caller_id)
         
         while True:
-            
             raw_input = input("write what to display: \n\n")
-            for caller_id in sio.input_buffer[-1][-1]['callers']:
-                sio.emit('cc_provider', {'id': caller_id, 'message': f'{raw_input}'})
+            print(sio.input_buffer)
+            for ii, caller_id in enumerate(sio.input_buffer[-1][-1]['callers']):
+                sio.emit('cc_provider', {'id': caller_id, 'message': f'{ii} says: {raw_input}'})
             
             # sio.receive(timeout=2.0)

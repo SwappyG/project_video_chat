@@ -33,6 +33,7 @@ const ContextProvider = ({ children }) => {
   const [call, setCall] = useState({isReceiveingCall: false});
   const [me, setMe] = useState('');
   const [captions, setCaptions] = useState([])
+  const captionsref = useRef([])
   // const [init, setInit] = useState(false)
   // const [captionTime, setCaptionTime] = useState('')
 
@@ -49,46 +50,25 @@ const ContextProvider = ({ children }) => {
     socket.on('me', (id) => {
       setMe(id)
       console.log(`ID: ${id}`)
-      setCaptions([...captions, {id: id, caption: null, caption_time: Date.now()}])
-      // console.log([...captions, {id: id, caption: null, caption_time: Date.now()}])
+      captionsref.current = [...captionsref.current, {id: id, caption: null, caption_time: Date.now()}]
     })
 
     socket.on('callUser', ({ from, name: callerName, signal }) => {
       setCall({ isReceivingCall: true, from, name: callerName, signal });
     });
-
     socket.on('cc_provider', ({id, message}) => {
-      console.log(id, message)
-      console.log(captions)
-      let caption = captions.find(cap => cap.id === id)
+      let caption = captionsref.current.find(cap => cap.id === id)
       if (caption != null) {
+        console.log(`Got caption for id ${id}, ${message}`)
         caption.caption = message
         caption.caption_time = Date.now()
+        setCaptions([...captionsref.current])
       } else {
         console.log(`nowhere to send caption for [${id}]`)
       }
-      console.log(`got cc message: ${id}: ${message}`)
+      // console.log(`got cc message: ${id}: ${message}`)
     })
-
-    
-
-    // setInterval(() => {
-    //   // const curr_time = Date.now()
-    //   // setCaptions(captions.map(cap => {
-    //   //   if ((cap.caption !== null) && (cap.caption_time - curr_time) > CAPTION_DWELL_TIME) {
-    //   //     cap.caption = null
-    //   //   }
-    //   // }))
-    //   console.log(captions)
-    // }, 1000)
-    // setInit(true)
   }, []);
-
-  // useEffect(() => {
-  //   if (!init) {
-      
-  //   }
-  // }, [init])
 
   // Required because myVideo.current may still be null when stream is first set
   useEffect(() => {
@@ -100,7 +80,8 @@ const ContextProvider = ({ children }) => {
   // Right now, multiple calls can happen concurrently, but only 1 new call
   // can be initiated at a time
   const answerCall = () => {
-    // setCaptions([...captions, {id: call.from, caption: null, caption_time: Date.now()}])
+    const call_id = call.from
+    captionsref.current.push({id: call_id, caption: null, caption_time: Date.now()})
     setCallAccepted(true)
     setCall({ isReceivedCall: false})
     const peer = new Peer({ initiator: false, trickle: false, stream });
@@ -111,7 +92,7 @@ const ContextProvider = ({ children }) => {
     });
 
     peer.on('stream', (currentStream) => {
-      setUserVideo([...userVideo, currentStream])
+      setUserVideo([...userVideo,  {id: call_id, stream: currentStream}])
     });
     
     peer.signal(call.signal);
@@ -122,19 +103,20 @@ const ContextProvider = ({ children }) => {
   const callUser = (id) => {
     const peer = new Peer({ initiator: true, trickle: false, stream });
     patchEmitter(peer)
-    // setCaptions([...captions, {id, caption: null, caption_time: Date.now()}])
-
+  
     peer.on('signal', (data) => {
       socket.emit('callUser', { userToCall: id, signalData: data, from: me, name });
     });
 
     peer.on('stream', (currentStream) => {
-      setUserVideo([...userVideo, currentStream])
+      console.log('got the stream!!!')
+      setUserVideo([...userVideo, {id, stream: currentStream}])
     });
     
     socket.on('callAccepted', (signal) => {
       setCallAccepted(true)
       setCall({ isReceivedCall: false})
+      captionsref.current.push({id, caption: null, caption_time: Date.now()})
       peer.signal(signal);
     });
 

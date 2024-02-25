@@ -46,13 +46,16 @@ io.on("connection", (socket) => {
 
 	socket.on("cc_provider", ({ id, message }) => {
 		console.log(message)
-		const caller = callers.find(cc => cc.id === id)
-		if (!caller) {
-			console.log(`caller was not found ${id}`)
-		} else{
-			console.log(`got message from caller: ${message}`)
-		}
-		callers.find(cc => cc.id === id).emit("cc_provider", { id, message })
+		callers.forEach(caller => {
+			caller.emit("cc_provider", { id, message })
+		})
+		// const caller = callers.find(cc => cc.id === id)
+		// if (!caller) {
+		// 	console.log(`caller was not found ${id}`)
+		// } else{
+		// 	console.log(`got message from caller: ${message}`)
+		// }
+		// callers.find(cc => cc.id === id).emit("cc_provider", { id, message })
 	})
 });
 
