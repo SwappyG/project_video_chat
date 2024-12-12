@@ -22,7 +22,7 @@ const useStyles = makeStyles((theme) => ({
     border: '2px solid black',
     margin: '10px',
   },
-}));
+}))
 
 // This makes sure that we create a new Ref and wait for it to exist before
 // assigning the stream. Allows us to dynamically add streams

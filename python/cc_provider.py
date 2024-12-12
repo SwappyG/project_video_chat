@@ -11,9 +11,16 @@ if __name__=="__main__":
         print(caller_id)
         
         while True:
-            raw_input = input("write what to display: \n\n")
-            print(sio.input_buffer)
-            for ii, caller_id in enumerate(sio.input_buffer[-1][-1]['callers']):
-                sio.emit('cc_provider', {'id': caller_id, 'message': f'{ii} says: {raw_input}'})
+            try:
+                print(sio.receive(1))
+            except:
+                print(sio.input_buffer)
+                pass
+            time.sleep(1)
+            # raw_input = input("write what to display: \n\n")
+            # message = sio.input_buffer[-1]
+            # if message[0] == 'cc_provider_get_socket_ids':
+            #     for ii, caller_id in enumerate(message[1]['callers']):
+            #         sio.emit('cc_provider', {'id': caller_id, 'message': f'{ii} says: {raw_input}'})
+
             
-            # sio.receive(timeout=2.0)
